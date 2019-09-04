@@ -1,0 +1,177 @@
+---
+title: "Likelihood, scores and second derivatives"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Math}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Notation
+
+$\boldsymbol{\beta}$ --- vertical coefficient vector. \
+$\boldsymbol{X}$ --- Covariate matrix with one row per observation. \
+$\boldsymbol{X_i}$ --- i'th row from $\boldsymbol{X}$ \
+$\boldsymbol{Y}$ --- Vertical binary outcome vector. \
+$k$ --- number of covariates. \
+$n$ --- number of observations. \
+$i$ --- observation index.
+
+\begin{align}
+\boldsymbol{\beta} =
+
+\begin{bmatrix}
+\beta_0 \\
+\beta_1 \\
+\vdots \\
+\beta_k
+\end{bmatrix}
+
+\quad
+
+\boldsymbol{X} =
+
+\begin{bmatrix}
+1 & X_{1, 1} & X_{2, 1} & \ldots & X_{k, 1} \\
+1 & X_{1, 2} & X_{2, 2} & \ldots & X_{k, 2} \\
+\vdots & \vdots & \vdots & \ddots & \vdots \\
+1 & X_{1, n} & X_{2, n} & \ldots & X_{k, n} \\
+\end{bmatrix}
+
+= 
+
+\begin{bmatrix}
+\boldsymbol{X_1} \\
+\boldsymbol{X_2} \\
+\vdots \\
+\boldsymbol{X_n}
+\end{bmatrix}
+
+\quad
+
+\boldsymbol{Y} = 
+
+\begin{bmatrix}
+Y_1 \\
+Y_2 \\
+\vdots \\
+Y_3
+\end{bmatrix}
+
+\end{align}
+
+## Model
+
+$$
+P(Y_i = 1) = \lambda \Big( 1 - \frac{\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})} \Big)
+$$
+
+## Log likelihood
+
+$$
+l(\lambda, \boldsymbol{\beta}) = \sum_i \text{log} \ \lambda + (1 - Y_i) \ \text{log}\big(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda\big) - \text{log}\big(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})\big)
+$$
+
+## Scores
+
+\begin{align}
+
+\begin{bmatrix}
+\frac{dl}{d\lambda} \\
+\frac{dl}{d\beta_0} \\
+\frac{dl}{d\beta_1} \\
+\vdots \\
+\frac{dl}{d\beta_k}
+\end{bmatrix}
+
+=
+
+\begin{bmatrix}
+\sum_i \frac{Y_i}{\lambda} - \frac{1 - Y_i}{1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda} \\
+
+\sum_i \frac{(1 - Y_i)\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda} - \frac{\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})} \\
+
+\sum_i \frac{(1 - Y_i)X_{1,i}\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda} - \frac{X_{1,i}\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})} \\
+
+\vdots \\
+
+\sum_i \frac{(1 - Y_i)X_{k,i}\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda} - \frac{X_{k,i}\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})} \\
+
+\end{bmatrix}
+
+\end{align}
+
+## Second derivatives
+
+\begin{align}
+\begin{array}{cc}
+
+\begin{matrix}
+\frac{dl}{d\lambda} \qquad \qquad \qquad \qquad \qquad & \frac{dl}{d\beta_0} \qquad \qquad \qquad \qquad \qquad  & \qquad \qquad \frac{dl}{d\beta_1} \qquad \qquad \qquad \qquad & \quad \ldots \qquad \qquad \qquad \qquad \qquad & \frac{dl}{d\beta_k}
+\end{matrix}\\
+
+\begin{matrix}
+\frac{dl}{d\lambda} \\
+\frac{dl}{d\beta_0} \\
+\frac{dl}{d\beta_1} \\
+\vdots \\
+\frac{dl}{d\beta_k}
+\end{matrix}
+
+\begin{bmatrix}
+
+\sum_i-\frac{Y_i}{\lambda^2} - \frac{1 - Y_i}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda)^2} &
+
+\sum_i \frac{(1 - Y_i) \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda)^2} &
+
+\sum_i \frac{(1 - Y_i) X_{1, i} \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda)^2} & 
+
+\ldots &
+
+\sum_i \frac{(1 - Y_i) X_{k, i} \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda)^2} \\
+
+. & 
+
+\sum_i \frac{(1 - Y_i)(1-\lambda)\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda)^2} -\frac{\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}))^2} &
+
+\sum_i \frac{X_{1, i} (1 - Y_i) (1-\lambda)\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda)^2} -\frac{X_{1, i} \text{exp} (\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}))^2} &
+
+\ldots & 
+
+\sum_i \frac{X_{k, i} (1 - Y_i) (1-\lambda)\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda)^2} -\frac{X_{k, i} \text{exp} (\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}))^2} \\
+
+. & 
+
+. & 
+
+\sum_i \frac{X_{1, i}^2 (1 - Y_i) (1-\lambda)\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda)^2} -\frac{X_{1, i}^2 \text{exp} (\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}))^2} & 
+
+\ldots & 
+
+\sum_i \frac{X_{1, i}X_{k, i} (1 - Y_i) (1-\lambda)\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda)^2} -\frac{X_{1, i}X_{k, i} \text{exp} (\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}))^2} \\
+
+\vdots & \vdots & \vdots & \ddots & \vdots \\
+
+. & 
+
+. & 
+
+. & 
+
+\ldots & 
+
+\sum_i \frac{X_{k, i}^2 (1 - Y_i) (1-\lambda)\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda)^2} -\frac{X_{k, i}^2 \text{exp} (\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}))^2}
+
+\end{bmatrix}
+
+\end{array}
+\end{align}
+
+
+## References
+
+Dunning AJ (2006). "A model for immunological correlates of protection." Statistics in Medicine, 25(9), 1485-1497. https://doi.org/10.1002/sim.2282.
