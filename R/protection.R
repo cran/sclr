@@ -1,7 +1,7 @@
 # Functions related to protection estimates
 # Arseniy Khvorov
 # Created 2019/07/31
-# Last edit 2019/08/30
+# Last edit 2019/10/15
 
 #' Protection level calculations
 #'
@@ -26,6 +26,8 @@
 #'
 #' @return A \code{\link[tibble]{tibble}}. Will have the same variables as
 #'   \code{newdata} with the addition of the \code{var_name} variable.
+#'   
+#' @importFrom dplyr bind_rows
 #'
 #' @export
 get_protection_level <- function(
@@ -44,13 +46,13 @@ get_protection_level <- function(
   titre_high <- find_prot_titre_val(
     fit, var_name, newdata, "prot_l", lvl, ci_level
   )
-  titre <- dplyr::bind_rows(titre_low, titre_point, titre_high)
+  titre <- bind_rows(titre_low, titre_point, titre_high)
   titre$prot_prob <- lvl
   titre$est <- "point"
   titre$est[titre$protvar == "prot_u"] <- "low bound"
   titre$est[titre$protvar == "prot_l"] <- "upper bound"
   titre$protvar <- NULL
-  return(titre)
+  titre
 }
 
 #' Search function for scaled logit protection covariate levels
@@ -78,6 +80,9 @@ get_protection_level <- function(
 #' the addition of the \code{var_name} variable.
 #' 
 #' @importFrom rlang sym := .data
+#' @importFrom dplyr mutate pull select if_else
+#' @importFrom stats coef
+#' @importFrom tibble tibble
 #' 
 #' @export
 find_prot_titre_val <- function(
@@ -86,40 +91,40 @@ find_prot_titre_val <- function(
 ) {
   
   # Need to somehow initialise the return dataframe
-  if (is.null(newdata)) newdata <- tibble::tibble(!!sym(var_name) := 0)
+  if (is.null(newdata)) newdata <- tibble(!!sym(var_name) := 0)
   
   # Initial guess interval
-  newdata <- dplyr::mutate(newdata, guess_low = -100, guess_high = 100)
+  newdata <- mutate(newdata, guess_low = -100, guess_high = 100)
   
   # Check if the variable is protective
-  ests <- stats::coef(fit)
+  ests <- coef(fit)
   is_protective <- ests[grepl(var_name, names(ests))] > 0
   
   # Binary search
   while (TRUE) {
     
-    newdata <- dplyr::mutate(
+    newdata <- mutate(
       newdata, !!sym(var_name) := (.data$guess_low + .data$guess_high) / 2
     )
     prot_sample <- predict(fit, newdata, ci_level)
     
-    curvals <- dplyr::pull(prot_sample, !!sym(prot_var_name))
+    curvals <- pull(prot_sample, !!sym(prot_var_name))
     notfound <- abs(curvals - lvl) > tol
     
     if (sum(notfound) == 0) {
-      newdata <- dplyr::select(newdata, -.data$guess_low, -.data$guess_high)
+      newdata <- select(newdata, -.data$guess_low, -.data$guess_high)
       newdata$protvar <- prot_var_name
       return(newdata)
     }
     
-    newdata <- dplyr::mutate(
+    newdata <- mutate(
       newdata,
-      guess_low = dplyr::if_else(
+      guess_low = if_else(
         xor(curvals < lvl, is_protective),
         .data$guess_low,
         !!sym(var_name)
       ),
-      guess_high = dplyr::if_else(
+      guess_high = if_else(
         xor(curvals > lvl, is_protective),
         .data$guess_high,
         !!sym(var_name)

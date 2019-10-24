@@ -9,11 +9,11 @@ library(sclr)
 
 ## ------------------------------------------------------------------------
 # One-titre fit to included simulated data
-fit1 <- sclr(status ~ logHI, sclr_one_titre_data)
+fit1 <- sclr(status ~ logHI, one_titre_data)
 summary(fit1)
 
 # Two-titre fit to included simulated data
-fit2 <- sclr(status ~ logHI + logNI, sclr_two_titre_data)
+fit2 <- sclr(status ~ logHI + logNI, two_titre_data)
 summary(fit2)
 
 ## ------------------------------------------------------------------------

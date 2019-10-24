@@ -4,16 +4,22 @@
 \alias{sclr_log_likelihood}
 \title{Log-likelihood}
 \usage{
-sclr_log_likelihood(fit, pars = NULL)
+sclr_log_likelihood(fit = NULL, x = NULL, y = NULL, pars = NULL)
 }
 \arguments{
-\item{fit}{An object returned by \code{\link{sclr}}.}
+\item{fit}{An object returned by \code{\link{sclr}}. Or a list with
+parameters, x and y entries corresponding to the parameter matrix, 
+model matrix and model response.}
 
-\item{pars}{A named vector of parameter values. If \code{NULL}
-then the estimates from \code{fit} will be used.}
+\item{x}{Model matrix. Will be taken from \code{fit} if \code{NULL}.}
+
+\item{y}{Model response. Will be taken from \code{fit} if \code{NULL}.}
+
+\item{pars}{A named vector of parameter values. If \code{NULL} then the
+estimates from \code{fit} will be used.}
 }
 \description{
-Computes the log-likelihood of the scaled logit model
-at a given set of parameter estimates 
-(or the MLE if \code{pars} is not supplied).
+Computes the log-likelihood of the scaled logit model at a given set of
+parameter estimates (or the MLE if \code{pars} is not supplied).
+Either \code{fit} or \code{x}, \code{y} and \code{pars} need to be supplied.
 }

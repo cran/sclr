@@ -5,12 +5,14 @@
 \alias{summary.sclr}
 \title{Print a \code{sclr} object.}
 \usage{
-\method{print}{sclr}(x, ...)
+\method{print}{sclr}(x, level = 0.95, ...)
 
-\method{summary}{sclr}(object, ...)
+\method{summary}{sclr}(object, level = 0.95, ...)
 }
 \arguments{
 \item{x, object}{An object returned by \code{\link{sclr}}.}
+
+\item{level}{Confidence level for the intervals.}
 
 \item{...}{Not used. Needed to match generic signature.}
 }

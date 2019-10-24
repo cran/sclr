@@ -5,6 +5,8 @@
 
 <!-- badges: start -->
 
+[![CRAN
+status](https://www.r-pkg.org/badges/version/sclr)](https://cran.r-project.org/package=sclr)
 [![Travis build
 status](https://travis-ci.org/khvorov45/sclr.svg?branch=master)](https://travis-ci.org/khvorov45/sclr)
 [![codecov](https://codecov.io/gh/khvorov45/sclr/branch/master/graph/badge.svg)](https://codecov.io/gh/khvorov45/sclr)
@@ -15,8 +17,13 @@ using the maximum likelihood method.
 
 ## Installation
 
-The package is not yet on [CRAN](https://CRAN.R-project.org). You can
-install the development version from [GitHub](https://github.com/) with:
+Install the [CRAN](https://CRAN.R-project.org) version with
+
+``` r
+install.packages("sclr")
+```
+
+Or the development version from [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
@@ -35,19 +42,20 @@ Usage is similar to other model fitting functions like `lm`.
 
 ``` r
 library(sclr)
-fit <- sclr(status ~ logHI, sclr_one_titre_data)
+ideal_data <- sclr_ideal_data(seed = 20191021)
+fit <- sclr(status ~ logHI, ideal_data)
 summary(fit)
 #> Call: status ~ logHI
 #> 
 #> Parameter estimates
 #>     lambda     beta_0 beta_logHI 
-#>   0.243828  -7.763952   2.088048 
+#>  0.4633844 -5.1399247  2.0679708 
 #> 
 #> 95% confidence intervals
-#>                 2.5 %     97.5 %
-#> lambda      0.2255282  0.2621277
-#> beta_0     -9.6362901 -5.8916139
-#> beta_logHI  1.6458693  2.5302271
+#>                 2.5 %    97.5 %
+#> lambda      0.4078069  0.518962
+#> beta_0     -7.2061683 -3.073681
+#> beta_logHI  1.3758545  2.760087
 ```
 
 For more details see `vignette("Usage", "sclr")`.

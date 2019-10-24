@@ -1,6 +1,6 @@
 Package: sclr
 Title: Scaled Logistic Regression
-Version: 0.1.0
+Version: 0.2.0
 Authors@R: 
     person(given = "Arseniy",
            family = "Khvorov",
@@ -15,11 +15,11 @@ LazyData: true
 RoxygenNote: 6.1.1
 Depends: R (>= 3.6.0)
 Imports: broom, tibble, dplyr, rlang, stats
-Suggests: knitr, rmarkdown, testthat
+Suggests: knitr, rmarkdown, testthat (>= 2.1.0)
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2019-09-03 22:25:43 UTC; khvoroa
+Packaged: 2019-10-24 21:11:30 UTC; khvoroa
 Author: Arseniy Khvorov [aut, cre]
 Maintainer: Arseniy Khvorov <khvorov45@gmail.com>
 Repository: CRAN
-Date/Publication: 2019-09-04 14:00:02 UTC
+Date/Publication: 2019-10-24 21:30:02 UTC

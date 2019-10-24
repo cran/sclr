@@ -1,20 +1,35 @@
 # General utility functions
+# Arseniy Khvorov
+# Created 2019/08/05
+# Last edit 2019/10/15
 
-# Returns parameter names based on the model matrix
-get_par_names <- function(x) {
-  par_names <- c("beta_0", paste0("beta_", colnames(x)[-1]))
-  return(par_names)
+#' Get paramter names
+#'
+#' @param x Model matrix
+#' @param conventional_names If \code{TRUE} - x names and (Baseline). Otherwise
+#'   lambda and betas 
+#'
+#' @noRd
+get_par_names <- function(x, conventional_names = FALSE) {
+  if (conventional_names) {
+    lambda_name <- "(Baseline)"
+    other_names <- colnames(x)
+  } else {
+    lambda_name <- "lambda"
+    other_names <- "beta_0"
+    if (length(colnames(x)[-1]) > 0)
+      other_names <- c(other_names, paste0("beta_", colnames(x)[-1]))
+  }
+  c(lambda_name, other_names)
 }
 
-# Narrows the parameter list to betas
-get_betas_only <- function(pars_mat) {
-  pars_betas <- pars_mat[grepl("beta", rownames(pars_mat)), ]
-  pars_betas_mat <- matrix(pars_betas, ncol = 1)
-  rownames(pars_betas_mat) <- names(pars_betas)
-  return(pars_betas_mat)
-}
-
-# Creates a matrix of all products of pairwise multiplication of elements of x
+#' Matrix of coefficients
+#'
+#' Creates a matrix of all products of pairwise multiplication of elements of x.
+#'
+#' @param x Model matrix
+#'
+#' @noRd
 get_x_coeffs <- function(x) {
   n_x <- ncol(x)
   n_coefs <- choose(n_x, 2) + n_x
@@ -27,27 +42,39 @@ get_x_coeffs <- function(x) {
       cur_coeff <- cur_coeff + 1
     }
   }
-  return(x_coeffs)
+  x_coeffs
 }
 
-# Creates a symmeterical matrix from vectors of unique triangles
+#' Symmetrical matrix
+#' 
+#' Creates a symmeterical matrix from vectors of unique triangles.
+#'
+#' @param obj A vector, a matrix or a dataframe of unique triangles.
+#'
+#' @noRd
 build_symm_mat <- function(obj) {
   if (is.vector(obj)) return(build_symm_mat_one(obj))
-  if (!is.data.frame(obj) & !is.matrix(obj)) 
-    stop("obj needs to be a vector, a matrix or a dataframe")
+  if (is.data.frame(obj)) obj <- as.matrix(obj)
+  if (!is.matrix(obj))
+    abort("obj needs to be a vector, a matrix or a dataframe")
   obj <- split(obj, seq(nrow(obj)))
-  mats <- lapply(obj, build_symm_mat_one)
-  return(mats)
+  lapply(obj, build_symm_mat_one)
 }
 
-# Creates a symmeterical matrix from a vector of the unique triangle
+#' Symmetrical matrix
+#' 
+#' Creates a symmeterical matrix from a vector of the unique triangle.
+#'
+#' @param triang_vec A vector representing a unique triangle
+#'
+#' @noRd
 build_symm_mat_one <- function(triang_vec) {
   matdim <- get_symm_dims(length(triang_vec))
   mat <- matrix(0, nrow = matdim, ncol = matdim)
   mat[lower.tri(mat, diag = TRUE)] <- triang_vec
   mat <- t(mat)
   mat[lower.tri(mat, diag = TRUE)] <- triang_vec
-  return(mat)
+  mat
 }
 
 # Returns the dimensions of the symmetrical matrix given the number of
@@ -55,11 +82,7 @@ build_symm_mat_one <- function(triang_vec) {
 get_symm_dims <- function(len) {
   rtexp <- 1 + 8 * len
   rt <- as.integer(sqrt(rtexp))
-  if ((rt^2 - rtexp) > 10^(-7)) stop(len, " is not a valid length of triangle")
-  return((-1 + rt) / 2)
-}
-
-# Returns the message to indicate mismatch of expected and provided variables
-nvar_mismatch_msg <- function(name, nvar_exp, nvar_got) {
-  paste("in", name, "expected", nvar_exp, "variables", "got", nvar_got)
+  if (abs(rt^2 - rtexp) > 10^(-7)) 
+    abort(paste0(len, " is not a valid length of triangle"))
+  (-1 + rt) / 2
 }
