@@ -4,21 +4,32 @@
 \alias{sclr_fit}
 \title{Fitter function for the scaled logit model}
 \usage{
-sclr_fit(y, x, tol = 10^(-7), n_iter = NULL, max_tol_it = 10^4,
-  n_conv = 3, conventional_names = FALSE)
+sclr_fit(
+  y,
+  x,
+  tol = 10^(-7),
+  algorithm = c("newton-raphson", "gradient-ascent"),
+  nr_iter = 2000,
+  ga_iter = 2000,
+  n_conv = 3,
+  conventional_names = FALSE,
+  seed = NULL
+)
 }
 \arguments{
 \item{y}{A vector of observations.}
 
 \item{x}{A design matrix.}
 
-\item{tol}{Tolerance. Used when \code{n_iter} is \code{NULL}.}
+\item{tol}{Tolerance.}
 
-\item{n_iter}{Number of Newton-Raphson iterations. \code{tol} is ignored when
-this is not \code{NULL}.}
+\item{algorithm}{Algorithms to run. "newton-raphson" or "gradient-ascent".
+If a character vector, the algorithms will be applied in the order they
+are present in the vector.}
 
-\item{max_tol_it}{Maximum tolerated iterations. If it fails to converge
-within this number of iterations, will return with an error.}
+\item{nr_iter}{Maximum allowed iterations for Newton-Raphson.}
+
+\item{ga_iter}{Maximum allowed iterations for gradient ascent.}
 
 \item{n_conv}{Number of times the algorithm has to converge (to work around
 local maxima).}
@@ -27,21 +38,13 @@ local maxima).}
 (Baseline), (Intercept) and the column names in the model matrix. Otherwise
 - lambda, beta_0 and beta_ prefix in front of column names in the model
 matrix.}
+
+\item{seed}{Seed for the algorithms.}
 }
 \description{
 Computing engine behind \code{\link{sclr}}.
 }
 \details{
-The likelihood maximisation uses the Newton-Raphson algorithm. Initial values
-are always 1 for the covariate coefficients (and the associated intercept)
-and the proportion of infected for the baseline risk.
-
-The algorithm will pick a new guess and restart under a set of conditions.
-
-1) Algorithm's iteration produces estimate guesses that cannot be used -
-baseline risk outside of (0, 1) since likelihood is undefined.
-
-2) The second derivative matrix produced by the current estimates is "bad" -
-positive semi-definite or missing values due to failing large 
-number calculations.
+The likelihood maximisation can use the Newton-Raphson or the gradient
+ascent algprithms.
 }

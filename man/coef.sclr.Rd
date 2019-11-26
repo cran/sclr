@@ -6,6 +6,7 @@
 \alias{confint.sclr}
 \alias{model.matrix.sclr}
 \alias{model.frame.sclr}
+\alias{logLik.sclr}
 \title{ML estimate components}
 \usage{
 \method{coef}{sclr}(object, ...)
@@ -17,6 +18,8 @@
 \method{model.matrix}{sclr}(object, ...)
 
 \method{model.frame}{sclr}(formula, ...)
+
+\method{logLik}{sclr}(object, ...)
 }
 \arguments{
 \item{object, formula}{An object returned by \code{\link{sclr}}.}

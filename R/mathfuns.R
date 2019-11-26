@@ -8,7 +8,9 @@
 #' @param x A numeric vector
 #'
 #' @noRd
-invlogit <- function(x) exp(x) / (1 + exp(x))
+invlogit <- function(x) {
+  1 - 1 / (1 + exp(x))
+}
 
 #' Commonly occuring exp(Xb) expression
 #'

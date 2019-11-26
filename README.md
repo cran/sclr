@@ -32,9 +32,10 @@ devtools::install_github("khvorov45/sclr")
 
 ## Model
 
-For log likelihood, scores and second derivatives see `vignette("Math",
-"sclr")`. Documentation of the main fitting function `?sclr` has details
-on how the model is fit.
+The model is logistic regression with an added parameter for the top
+asymptote. For model specification, log likelihood, scores and second
+derivatives see `vignette("sclr-math")`. Documentation of the main
+fitting function `?sclr` has details on how the model is fit.
 
 ## Example
 
@@ -42,23 +43,24 @@ Usage is similar to other model fitting functions like `lm`.
 
 ``` r
 library(sclr)
-ideal_data <- sclr_ideal_data(seed = 20191021)
-fit <- sclr(status ~ logHI, ideal_data)
+fit <- sclr(status ~ logHI, one_titre_data) # included simulated data
 summary(fit)
 #> Call: status ~ logHI
 #> 
 #> Parameter estimates
-#>     lambda     beta_0 beta_logHI 
-#>  0.4633844 -5.1399247  2.0679708 
+#>       theta      beta_0  beta_logHI 
+#> -0.03497876 -5.42535734  2.14877741 
 #> 
 #> 95% confidence intervals
-#>                 2.5 %    97.5 %
-#> lambda      0.4078069  0.518962
-#> beta_0     -7.2061683 -3.073681
-#> beta_logHI  1.3758545  2.760087
+#>                 2.5 %      97.5 %
+#> theta      -0.1350572  0.06509969
+#> beta_0     -6.4417802 -4.40893449
+#> beta_logHI  1.8146909  2.48286390
+#> 
+#> Log likelihood: -2469.765
 ```
 
-For more details see `vignette("Usage", "sclr")`.
+For more details see `vignette("sclr-usage")`.
 
 ## References
 

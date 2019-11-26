@@ -4,8 +4,14 @@
 \alias{get_protection_level}
 \title{Protection level calculations}
 \usage{
-get_protection_level(fit, var_name, newdata = NULL, lvl = 0.5,
-  ci_level = 0.95, tol = 10^(-7))
+get_protection_level(
+  fit,
+  var_name,
+  newdata = NULL,
+  lvl = 0.5,
+  ci_level = 0.95,
+  tol = 10^(-7)
+)
 }
 \arguments{
 \item{fit}{Object returned by \code{\link{sclr}}.}

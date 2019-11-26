@@ -15,7 +15,7 @@ get_par_names <- function(x, conventional_names = FALSE) {
     lambda_name <- "(Baseline)"
     other_names <- colnames(x)
   } else {
-    lambda_name <- "lambda"
+    lambda_name <- "theta"
     other_names <- "beta_0"
     if (length(colnames(x)[-1]) > 0)
       other_names <- c(other_names, paste0("beta_", colnames(x)[-1]))

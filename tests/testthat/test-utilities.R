@@ -7,13 +7,13 @@ library(sclr)
 
 test_that("parameter names are created appropriately", {
   x <- model.matrix(status ~ logHI, one_titre_data)
-  expect_equal(get_par_names(x), c("lambda", "beta_0", "beta_logHI"))
+  expect_equal(get_par_names(x), c("theta", "beta_0", "beta_logHI"))
   expect_equal(
     get_par_names(x, conventional_names = TRUE),
     c("(Baseline)", "(Intercept)", "logHI")
   )
   x <- model.matrix(status ~ 1, one_titre_data)
-  expect_equal(get_par_names(x), c("lambda", "beta_0"))
+  expect_equal(get_par_names(x), c("theta", "beta_0"))
 })
 
 test_that("x_coeffs are calculated", {

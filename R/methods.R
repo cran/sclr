@@ -58,6 +58,7 @@ vcov.sclr <- function(object, ...) object$covariance_mat
 #' @importFrom stats confint.default
 #' @export
 confint.sclr <- function(object, parm, level = 0.95, ...) {
+  if (is.null(object$parameters)) return(NULL)
   confint.default(object, parm, level, ...)
 }
 
@@ -70,6 +71,17 @@ model.matrix.sclr <- function(object, ...) object$x
 #' @importFrom stats model.frame
 #' @export
 model.frame.sclr <- function(formula, ...) formula$model
+
+#' @rdname coef.sclr
+#' @importFrom stats logLik
+#' @export
+logLik.sclr <- function(object, ...) {
+  ll <- object$log_likelihood
+  attr(ll, "nobs") <- nrow(model.matrix(object))
+  attr(ll, "df") <- length(coef(object))
+  class(ll) <- "logLik"
+  ll
+}
 
 #' Predict method for scaled logit model x.
 #' 

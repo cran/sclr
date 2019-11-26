@@ -16,8 +16,21 @@ test_that("access works", {
   expect_equal(coef(fit), fit$parameters)
   expect_equal(vcov(fit), fit$covariance_mat)
   expect_equal(confint(fit), confint.default(fit))
+  empty_fit <- suppressWarnings(sclr(
+    status ~ logHI, one_titre_data, 
+    algorithm = "newton-raphson", nr_iter = 3
+  ))
+  expect_null(confint(empty_fit))
   expect_equal(model.matrix(fit), fit$x)
   expect_equal(model.frame(fit), fit$model)
+  ll <- logLik(fit)
+  expect_equal(class(ll), "logLik")
+  expect_equal(attr(ll, "nobs"), nrow(one_titre_data))
+  expect_equal(attr(ll, "df"), 3)
+  ll2 <- logLik(sclr(status ~ logHI + logNI, two_titre_data))
+  expect_equal(attr(ll2, "df"), 4)
+  ll3 <- suppressWarnings(logLik(sclr(status ~ 1, two_titre_data)))
+  expect_equal(attr(ll3, "df"), 2)
 })
 
 test_that("tidying works", {

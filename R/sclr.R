@@ -1,17 +1,19 @@
 # sclr class functions
 # Arseniy Khvorov
 # Created 2019/07/31
-# Last edit 2019/10/15
+# Last edit 2019/11/04
 
 #' Fits the scaled logit model
 #'
 #' Used to fit the scaled logit model from Dunning (2006).
 #'
-#' The model is of the form \deqn{P(Y = 1) = \lambda(1 - logit^{-1}(\beta_0 +
-#' \beta_1X_1 + \beta_2X_2 + ... + \beta_kX_k))} Where \eqn{Y} is the binary
-#' outcome indicator, (eg. 1 - infected, 0 - not infected). \eqn{X} - covariate.
-#' \eqn{k} - number of covariates. Computing engine behind the fitting is
-#' \code{\link{sclr_fit}}.
+#' The model is logistic regression with an added parameter for the top
+#' asymptote. That parameter is reported as \code{theta} (or \code{(Baseline)}
+#' if \code{conventional_names = TRUE}). Note that it is reported on the logit
+#' scale. See \code{vignette("sclr-math")} for model specification,
+#' log-likelihood, scores and second derivatives. The main default optimisation
+#' algorithm is Newton-Raphson. Gradient ascent is used as a fallback by
+#' default. Computing engine behind the fitting is \code{\link{sclr_fit}}.
 #'
 #' @param formula an object of class "formula": a symbolic description of the
 #'   model to be fitted.
@@ -26,6 +28,10 @@
 #'
 #'   \item{covariance_mat}{The variance-covariance matrix of the parameter
 #'   estimates.}
+#'   
+#'   \item{algorithm}{Algorithm used.}
+#'   
+#'   \item{algorithm_return}{Everything the algorithm returned.}
 #'
 #'   \item{n_converge}{The number of Newton-Raphson iterations (including
 #'   resets) that were required for convergence.}
@@ -33,25 +39,30 @@
 #'   \item{x}{Model matrix derived from \code{formula} and \code{data}.}
 #'
 #'   \item{y}{Response matrix derived from \code{formula} and \code{data}.}
-#'   
+#'
 #'   \item{call}{The original call to \code{sclr}.}
 #'
-#'   \item{model}{Model frame object derived from \code{formula} and 
+#'   \item{model}{Model frame object derived from \code{formula} and
 #'   \code{data}.}
 #'
 #'   \item{terms}{Terms object derived from model frame.}
-#'   
+#'
 #'   \item{ci}{Confidence intervals of the parameter estimates.}
-#'   
+#'
 #'   \item{log_likelihood}{Value of log-likelihood calculated at the ML
-#'   estimates of parameters.} 
+#'   estimates of parameters.}
+#'   
+#'   \item{formula}{Passed formula.}
+#'   
+#'   \item{data}{Passed data.}
 #'
 #'   Methods supported: \code{\link[=print.sclr]{print}},
 #'   \code{\link[=vcov.sclr]{vcov}}, \code{\link[=coef.sclr]{coef}},
 #'   \code{\link[=model.frame.sclr]{model.frame}},
 #'   \code{\link[=model.matrix.sclr]{model.matrix}},
 #'   \code{\link[=summary.sclr]{summary}}, \code{\link[=predict.sclr]{predict}},
-#'   \code{\link[=tidy.sclr]{tidy}} (\code{\link{broom}} package).
+#'   \code{\link[=tidy.sclr]{tidy}} (\code{\link{broom}} package),
+#'   \code{\link[=logLik.sclr]{logLik}}.
 #'
 #' @references Dunning AJ (2006). "A model for immunological correlates of
 #'   protection." Statistics in Medicine, 25(9), 1485-1497.
@@ -62,16 +73,15 @@
 #' fit1 <- sclr(status ~ logHI, one_titre_data)
 #' summary(fit1)
 #' @importFrom stats confint model.frame model.matrix model.response
-#' @importFrom rlang abort
+#' @importFrom rlang abort warn
 #'
 #' @export
 sclr <- function(formula, data = NULL, 
                  ci_lvl = 0.95, 
-                 tol = 10^(-7), 
-                 n_iter = NULL, 
-                 max_tol_it = 10^4, 
-                 n_conv = 3,
-                 conventional_names = FALSE) {
+                 tol = 10^(-7),
+                 algorithm = c("newton-raphson", "gradient-ascent"),
+                 nr_iter = 2e3, ga_iter = 2e3, n_conv = 3,
+                 conventional_names = FALSE, seed = NULL) {
   
   if (!inherits(formula, "formula") || missing(formula)) 
     abort("must supply a formula")
@@ -82,6 +92,7 @@ sclr <- function(formula, data = NULL,
   # Design matirix
   mt <- attr(mf, "terms")
   x <- model.matrix(mt, mf)
+  if (ncol(x) == 1) warn("no unique solution with no covariates")
 
   # Response vector
   y <- model.response(mf)
@@ -89,12 +100,16 @@ sclr <- function(formula, data = NULL,
   if (!is.numeric(y)) abort("response should be numeric")
 
   # Actual model fit
-  fit <- sclr_fit(y, x, tol, n_iter, max_tol_it, n_conv, conventional_names)
+  fit <- sclr_fit(
+    y, x, tol, algorithm, nr_iter, ga_iter, n_conv, conventional_names, seed
+  )
 
   # Build the return list
   fit <- new_sclr(fit, x, y, cl, mf, mt)
   fit$ci <- confint(fit, level = ci_lvl)
   fit$log_likelihood <- sclr_log_likelihood(fit)
+  fit$formula <- formula
+  fit$data <- data
   fit
 }
 

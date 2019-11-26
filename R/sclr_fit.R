@@ -7,166 +7,245 @@
 #'
 #' Computing engine behind \code{\link{sclr}}.
 #'
-#' The likelihood maximisation uses the Newton-Raphson algorithm. Initial values
-#' are always 1 for the covariate coefficients (and the associated intercept)
-#' and the proportion of infected for the baseline risk.
-#'
-#' The algorithm will pick a new guess and restart under a set of conditions.
-#'
-#' 1) Algorithm's iteration produces estimate guesses that cannot be used -
-#' baseline risk outside of (0, 1) since likelihood is undefined.
-#'
-#' 2) The second derivative matrix produced by the current estimates is "bad" -
-#' positive semi-definite or missing values due to failing large 
-#' number calculations.
+#' The likelihood maximisation can use the Newton-Raphson or the gradient
+#' ascent algorithms.
 #'
 #' @param y A vector of observations.
 #' @param x A design matrix.
-#' @param tol Tolerance. Used when \code{n_iter} is \code{NULL}.
-#' @param n_iter Number of Newton-Raphson iterations. \code{tol} is ignored when
-#'   this is not \code{NULL}.
-#' @param max_tol_it Maximum tolerated iterations. If it fails to converge
-#'   within this number of iterations, will return with an error.
+#' @param tol Tolerance.
+#' @param algorithm Algorithms to run. "newton-raphson" or "gradient-ascent".
+#'   If a character vector, the algorithms will be applied in the order they
+#'   are present in the vector.
+#' @param nr_iter Maximum allowed iterations for Newton-Raphson.
+#' @param ga_iter Maximum allowed iterations for gradient ascent.
 #' @param n_conv Number of times the algorithm has to converge (to work around
 #'   local maxima).
 #' @param conventional_names If \code{TRUE}, estimated parameter names will be
 #'   (Baseline), (Intercept) and the column names in the model matrix. Otherwise
 #'   - lambda, beta_0 and beta_ prefix in front of column names in the model
 #'   matrix.
-#'   
+#' @param seed Seed for the algorithms.
+#'
 #' @importFrom rlang abort
 #'
 #' @export
 sclr_fit <- function(y, x, 
                      tol = 10^(-7), 
-                     n_iter = NULL, max_tol_it = 10^4, n_conv = 3,
-                     conventional_names = FALSE) {
+                     algorithm = c("newton-raphson", "gradient-ascent"),
+                     nr_iter = 2e3, ga_iter = 2e3, n_conv = 3,
+                     conventional_names = FALSE, seed = NULL) {
+  alg_dict <- list(
+    "newton-raphson" = list(fun = newton_raphson, max = nr_iter),
+    "gradient-ascent" = list(fun = gradient_ascent, max = ga_iter)
+  )
   
-  # Parameter matrix with initial values
-  pars_mat <- get_init_pars_mat(x, y, conventional_names)
-
+  if (!all(algorithm %in% names(alg_dict)))
+    abort(
+      paste0(
+        "`algorithm` should be in: ", 
+        paste(names(alg_dict), collapse = " ")
+      )
+    )
+  
   x_coeffs <- get_x_coeffs(x) # To avoid recalculations
+  
+  for (alg_name in algorithm) {
+    out <- run_algorithm(
+      alg_name, alg_dict[[alg_name]]$fun,
+      n_conv, y, x, x_coeffs, alg_dict[[alg_name]]$max, 
+      tol, conventional_names, seed
+    )
+    if (!is.null(out$parameters) && !is.null(out$covariance_mat)) return(out)
+  }
+  out
+}
 
-  # Work out the MLEs
-  n_iter_cur <- 1
-  conv_count <- 0
-  lls <- c()
-  rets <- list()
-  while (TRUE) {
-    
-    # Check that the current set is workable
-    if (is_bad_pars(pars_mat)) pars_mat <- guess_again(pars_mat)
+#' Run one algorithm
+#'
+#' @param name Name of the algorithm
+#' @param fun Function that runs it
+#' @inheritParams newton_raphson
+#'
+#' @noRd
+run_algorithm <- function(name, fun, n_conv, y, x, 
+                          x_coeffs, max_iter, tol, conventional_names, 
+                          seed = NULL) {
+  if (!is.null(seed)) set.seed(seed)
+  
+  init_mats <- lapply(
+    1:n_conv, function(i) get_init_pars_mat(y, x, conventional_names)
+  )
+  
+  rets <- lapply(
+    1:n_conv,
+    function(i) fun(y, x, init_mats[[i]], x_coeffs, max_iter, tol)
+  )
+  lls <- sapply(
+    rets, function(ret) {
+      if (is.null(ret$found)) return(-Inf)
+      sclr_log_likelihood(x = x, y = y, pars = ret$found)
+    }
+  )
+  if (all(lls == -Inf)) 
+    warn(
+      paste0(
+        name, " did not converge, check for boundary with check_baseline()"
+      )
+    )
+  else if (sum(lls == -Inf) > 0) 
+    warn(paste0(
+      name, " only converged ", length(lls) - sum(lls == -Inf),
+      " time(s) out of ", n_conv
+    ))
+  list(
+    parameters = rets[[which.max(lls)]]$found,
+    covariance_mat = rets[[which.max(lls)]]$cov,
+    algorithm = name,
+    algorithm_return = rets
+  )
+}
+
+#' Generalised Newton-Raphson
+#'
+#' @param y Model matrix
+#' @param x Model response
+#' @param pars_mat Initial parameter matrix
+#' @param x_coeffs Matrix of pairwise products of x
+#' @param max_iter Maximum allowed iterations
+#' @param tol Tolerance
+#' @param conventional_names Whether to give conventional names to parameters
+#' @param seed Seed
+#'
+#' @noRd
+newton_raphson <- function(y, x, pars_mat,
+                           x_coeffs, max_iter, tol, 
+                           seed = NULL) {
+  
+  if (!is.null(seed)) set.seed(seed)
+
+  add_reset <- function(out, ind, reason) {
+    out[["reset_index"]] <- c(out[["reset_index"]], ind)
+    out[["reset_reason"]] <- c(out[["reset_reason"]], reason)
+    out
+  }
+  
+  out <- list(init_mat = pars_mat)
+  cur_iter <- 1
+
+  for (cur_iter in 1:max_iter) {
+
     pars_mat_prev <- pars_mat # Save for later
     
     # Calculate the commonly occuring expession
     exp_Xb <- get_exp_Xb(y, x, pars_mat)
     
-    # Log-likelihood second derivative (negative of information) matrix
-    jacobian_mat <- get_jacobian(y, x, pars_mat, exp_Xb, x_coeffs)
-    if (is_bad_jac(jacobian_mat)) {
+    # Scores
+    scores_mat <- get_scores(y, x, pars_mat, exp_Xb)
+    if (any(is.na(scores_mat))) {
       pars_mat <- guess_again(pars_mat)
+      out <- add_reset(out, cur_iter, "could not calculate scores")
+      next
+    }
+    
+    # Log-likelihood second derivative (negative of information) matrix
+    hessian_mat <- get_hessian(y, x, pars_mat, exp_Xb, x_coeffs)
+    if (any(is.na(hessian_mat))) {
+      pars_mat <- guess_again(pars_mat)
+      out <- add_reset(out, cur_iter, "could not calculate hessian")
       next
     }
     
     # Invert to get the negative of the covariance matrix
-    inv_jacobian_mat <- try(solve(jacobian_mat), silent = TRUE)
-    if (inherits(inv_jacobian_mat, "try-error") || 
-        any(is.na(inv_jacobian_mat))) {
+    inv_hes_mat <- try(solve(hessian_mat), silent = TRUE)
+    if (inherits(inv_hes_mat, "try-error") || 
+        any(is.na(inv_hes_mat))) {
       pars_mat <- guess_again(pars_mat)
+      out <- add_reset(out, cur_iter, "could not invert hessian")
       next
     }
     
-    # Generalised Newton-Raphson
-    scores_mat <- get_scores(y, x, pars_mat, exp_Xb)
-    pars_mat <- pars_mat_prev - inv_jacobian_mat %*% scores_mat
-    
-    # Check convergence
+    pars_mat <- pars_mat_prev - inv_hes_mat %*% scores_mat
+
     if (has_converged(pars_mat, pars_mat_prev, tol)) {
-      conv_count <- conv_count + 1
-      lls[[conv_count]] <- sclr_log_likelihood(x = x, y = y, pars = pars_mat)
-      rets[[conv_count]] <- list(
-        "invjac" = inv_jacobian_mat, "pars" = pars_mat
-      )
-      if (conv_count == n_conv) break
-      pars_mat <- guess_again(pars_mat)
-      next
-    } else {
-      if (!is.null(n_iter) && (n_iter_cur >= n_iter)) {
-        lls[[conv_count + 1]] <- sclr_log_likelihood(
-          x = x, y = y, pars = pars_mat
-        )
-        rets[[conv_count + 1]] <- list(
-          "invjac" = inv_jacobian_mat, "pars" = pars_mat
-        )
-        break
+      if (!is_maximum(hessian_mat)) {
+        pars_mat <- guess_again(pars_mat)
+        out <- add_reset(out, cur_iter, "converged not to maximum")
+        next
       }
-      if (n_iter_cur >= max_tol_it) {
-        abort(paste0("did not converge in ", max_tol_it, " iterations"))
-      }
-      n_iter_cur <- n_iter_cur + 1
-      next
+      pars <- pars_mat[, 1]
+      names(pars) <- rownames(pars_mat)
+      out[["found"]] <- pars
+      covariance_mat <- -inv_hes_mat
+      dimnames(covariance_mat) <- list(names(pars), names(pars))
+      out[["cov"]] <- covariance_mat
+      out[["last_iter"]] <- cur_iter
+      break
     }
   }
-  
-  if (all(is.nan(lls))) 
-    abort(paste0("no reportable results in ", n_iter_cur, " iterations"))
-  
-  i_best <- which.max(lls)
-  pars_mat <- rets[[i_best]][["pars"]]
-  inv_jacobian_mat <- rets[[i_best]][["invjac"]]
-  
-  # Build the return list
-  parameters <- as.vector(pars_mat)
-  names(parameters) <- rownames(pars_mat)
-  
-  covariance_mat <- -inv_jacobian_mat
-  dimnames(covariance_mat) <- list(names(parameters), names(parameters))
-  list(
-    parameters = parameters,
-    covariance_mat = covariance_mat,
-    n_converge = n_iter_cur
-  )
+  out
 }
 
-#' Initial parameter matrix
+#' Gradient ascent algorithm
 #'
-#' @param x Model matrix.
+#' @inheritParams newton_raphson
+#'
+#' @noRd
+gradient_ascent <- function(y, x, pars_mat,
+                            x_coeffs, max_iter, tol, 
+                            seed = NULL) {
+  
+  if (!is.null(seed)) set.seed(seed)
+  
+  control <- 1
+  low_inc_count <- 0
+  out <- list(init_mat = pars_mat)
+  for (cur_iter in 1:max_iter) {
+    pars_mat_prev <- pars_mat
+    exp_xb <- get_exp_Xb(y, x, pars_mat)
+    scores <- get_scores(y, x, pars_mat, exp_xb)
+    step <- scores / sum(abs(scores)) * control
+    
+    pars_mat <- pars_mat + step
+    
+    ll_diff <- sclr_log_likelihood(x = x, y = y, pars = pars_mat) -
+      sclr_log_likelihood(x = x, y = y, pars = pars_mat_prev)
+    
+    if (ll_diff <= 0) {
+      low_inc_count <- 0
+      control <- control * 0.5
+    } else if (ll_diff > 0 && ll_diff < 0.001) {
+      low_inc_count <- low_inc_count + 1
+    } else low_inc_count <- 0
+    
+    if (has_converged(pars_mat, pars_mat_prev, tol) ||
+        low_inc_count / cur_iter >= 0.2) {
+      pars <- pars_mat[, 1]
+      names(pars) <- rownames(pars_mat)
+      out[["found"]] <- pars
+      x_coeffs <- get_x_coeffs(x)
+      covariance_mat <- -solve(get_hessian(y, x, pars_mat, exp_xb, x_coeffs))
+      dimnames(covariance_mat) <- list(names(pars), names(pars))
+      out[["cov"]] <- covariance_mat
+      out[["last_iter"]] <- cur_iter
+      break
+    }
+  }
+  out
+}
+
+#' Initial random parameter matrix
+#'
 #' @param y Model response.
+#' @param x Model matrix.
 #' @param conventional_names Controls parameter names.
+#' @param seed Seed.
 #'
 #' @noRd
-get_init_pars_mat <- function(x, y, conventional_names) {
-  n_par <- ncol(x) + 1
-  pars_mat <- matrix(rep(1, n_par))
+get_init_pars_mat <- function(y, x, conventional_names, seed = NULL) {
+  if (!is.null(seed)) set.seed(seed)
+  pars_mat <- matrix(rnorm(ncol(x) + 1, 0, 2), ncol = 1)
   rownames(pars_mat) <- get_par_names(x, conventional_names)
-  pars_mat[1, ] <- mean(y)
   pars_mat
-}
-
-#' Check the parameter matrix.
-#'
-#' Checks if the current parameter guesses are OK for derivative calculations.
-#' Returns \code{TRUE} if they are and \code{FALSE} otherwise.
-#'
-#' @param pars_mat The current matrix of parameter guesses.
-#'
-#' @noRd
-is_bad_pars <- function(pars_mat) {
-  lambda <- pars_mat[1, ]
-  (lambda < 0) || (lambda > 1) # Likelihood undefined
-}
-
-#' Check the second derivative matrix
-#'
-#' Checks if the current parameter guesses are OK for derivative calculations.
-#' Returns \code{TRUE} if they are and \code{FALSE} otherwise.
-#'
-#' @param jac The current second derivative matrix.
-#'
-#' @noRd
-is_bad_jac <- function(jac) {
-  if (any(is.na(jac))) return(TRUE)
-  is_convex(jac)
 }
 
 #' Create a new guess
@@ -180,28 +259,9 @@ is_bad_jac <- function(jac) {
 #'
 #' @noRd
 guess_again <- function(pars_mat) {
-  delta <- matrix(
-    c(
-      runif(1, min = 0, max = 1),
-      rnorm(nrow(pars_mat) - 1, mean = 0, sd = 2)
-    ),
-    ncol = 1
-  )
+  delta <- matrix(rnorm(nrow(pars_mat), mean = 0, sd = 2), ncol = 1)
   rownames(delta) <- rownames(pars_mat)
-  return(delta)
-}
-
-#' Check for convexity
-#'
-#' @param jac Second derivative matrix
-#' 
-#' @importFrom dplyr near
-#'
-#' @noRd
-is_convex <- function(jac) {
-  eigenvals <- eigen(jac, only.values = TRUE)$values
-  eigenvals[near(eigenvals, 0)] <- 0
-  any(eigenvals > 0)
+  delta
 }
 
 #' Check convergence
@@ -214,4 +274,14 @@ is_convex <- function(jac) {
 has_converged <- function(pars_mat, pars_mat_prev, tol) {
   deltas <- abs(pars_mat - pars_mat_prev)
   all(deltas < tol)
+}
+
+#' Check maximum
+#'
+#' @param hessian The second derivative matrix
+#'
+#' @noRd
+is_maximum <- function(hessian) {
+  eigenvals <- eigen(hessian, symmetric = TRUE, only.values = TRUE)$values
+  all(eigenvals < 0)
 }

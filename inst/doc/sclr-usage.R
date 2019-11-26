@@ -1,13 +1,13 @@
-## ---- include = FALSE----------------------------------------------------
+## ---- include = FALSE---------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
 
-## ----setup---------------------------------------------------------------
+## ----setup--------------------------------------------------------------------
 library(sclr)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 # One-titre fit to included simulated data
 fit1 <- sclr(status ~ logHI, one_titre_data)
 summary(fit1)
@@ -16,7 +16,7 @@ summary(fit1)
 fit2 <- sclr(status ~ logHI + logNI, two_titre_data)
 summary(fit2)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 # One-titre fit
 preddata1 <- data.frame(logHI = seq(0, 8, length.out = 101))
 pred1 <- predict(fit1, preddata1)
@@ -27,7 +27,7 @@ preddata2 <- data.frame(logHI = seq(0, 8, length.out = 101), logNI = 1)
 pred2 <- predict(fit2, preddata2)
 head(pred2[, c("logHI", "logNI", "prot_l", "prot_point", "prot_u")])
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 protHI1 <- get_protection_level(fit1, "logHI", lvl = 0.5)
 print(protHI1)
 

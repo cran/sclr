@@ -4,9 +4,18 @@
 \alias{sclr}
 \title{Fits the scaled logit model}
 \usage{
-sclr(formula, data = NULL, ci_lvl = 0.95, tol = 10^(-7),
-  n_iter = NULL, max_tol_it = 10^4, n_conv = 3,
-  conventional_names = FALSE)
+sclr(
+  formula,
+  data = NULL,
+  ci_lvl = 0.95,
+  tol = 10^(-7),
+  algorithm = c("newton-raphson", "gradient-ascent"),
+  nr_iter = 2000,
+  ga_iter = 2000,
+  n_conv = 3,
+  conventional_names = FALSE,
+  seed = NULL
+)
 }
 \arguments{
 \item{formula}{an object of class "formula": a symbolic description of the
@@ -16,13 +25,15 @@ model to be fitted.}
 
 \item{ci_lvl}{Confidence interval level for the parameter estimates.}
 
-\item{tol}{Tolerance. Used when \code{n_iter} is \code{NULL}.}
+\item{tol}{Tolerance.}
 
-\item{n_iter}{Number of Newton-Raphson iterations. \code{tol} is ignored when
-this is not \code{NULL}.}
+\item{algorithm}{Algorithms to run. "newton-raphson" or "gradient-ascent".
+If a character vector, the algorithms will be applied in the order they
+are present in the vector.}
 
-\item{max_tol_it}{Maximum tolerated iterations. If it fails to converge
-within this number of iterations, will return with an error.}
+\item{nr_iter}{Maximum allowed iterations for Newton-Raphson.}
+
+\item{ga_iter}{Maximum allowed iterations for gradient ascent.}
 
 \item{n_conv}{Number of times the algorithm has to converge (to work around
 local maxima).}
@@ -31,6 +42,8 @@ local maxima).}
 (Baseline), (Intercept) and the column names in the model matrix. Otherwise
 - lambda, beta_0 and beta_ prefix in front of column names in the model
 matrix.}
+
+\item{seed}{Seed for the algorithms.}
 }
 \value{
 An object of class \code{sclr}. This is a list with the following
@@ -40,6 +53,10 @@ An object of class \code{sclr}. This is a list with the following
 
   \item{covariance_mat}{The variance-covariance matrix of the parameter
   estimates.}
+  
+  \item{algorithm}{Algorithm used.}
+  
+  \item{algorithm_return}{Everything the algorithm returned.}
 
   \item{n_converge}{The number of Newton-Raphson iterations (including
   resets) that were required for convergence.}
@@ -47,35 +64,42 @@ An object of class \code{sclr}. This is a list with the following
   \item{x}{Model matrix derived from \code{formula} and \code{data}.}
 
   \item{y}{Response matrix derived from \code{formula} and \code{data}.}
-  
+
   \item{call}{The original call to \code{sclr}.}
 
-  \item{model}{Model frame object derived from \code{formula} and 
+  \item{model}{Model frame object derived from \code{formula} and
   \code{data}.}
 
   \item{terms}{Terms object derived from model frame.}
-  
+
   \item{ci}{Confidence intervals of the parameter estimates.}
-  
+
   \item{log_likelihood}{Value of log-likelihood calculated at the ML
-  estimates of parameters.} 
+  estimates of parameters.}
+  
+  \item{formula}{Passed formula.}
+  
+  \item{data}{Passed data.}
 
   Methods supported: \code{\link[=print.sclr]{print}},
   \code{\link[=vcov.sclr]{vcov}}, \code{\link[=coef.sclr]{coef}},
   \code{\link[=model.frame.sclr]{model.frame}},
   \code{\link[=model.matrix.sclr]{model.matrix}},
   \code{\link[=summary.sclr]{summary}}, \code{\link[=predict.sclr]{predict}},
-  \code{\link[=tidy.sclr]{tidy}} (\code{\link{broom}} package).
+  \code{\link[=tidy.sclr]{tidy}} (\code{\link{broom}} package),
+  \code{\link[=logLik.sclr]{logLik}}.
 }
 \description{
 Used to fit the scaled logit model from Dunning (2006).
 }
 \details{
-The model is of the form \deqn{P(Y = 1) = \lambda(1 - logit^{-1}(\beta_0 +
-\beta_1X_1 + \beta_2X_2 + ... + \beta_kX_k))} Where \eqn{Y} is the binary
-outcome indicator, (eg. 1 - infected, 0 - not infected). \eqn{X} - covariate.
-\eqn{k} - number of covariates. Computing engine behind the fitting is
-\code{\link{sclr_fit}}.
+The model is logistic regression with an added parameter for the top
+asymptote. That parameter is reported as \code{theta} (or \code{(Baseline)}
+if \code{conventional_names = TRUE}). Note that it is reported on the logit
+scale. See \code{vignette("sclr-math")} for model specification,
+log-likelihood, scores and second derivatives. The main default optimisation
+algorithm is Newton-Raphson. Gradient ascent is used as a fallback by
+default. Computing engine behind the fitting is \code{\link{sclr_fit}}.
 }
 \examples{
 library(sclr)

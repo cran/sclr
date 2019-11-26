@@ -9,7 +9,7 @@
 #' covariates.
 #'
 #' @param n Number of observations.
-#' @param lambda Baseline risk parameter.
+#' @param theta Baseline risk parameter on the logit scale.
 #' @param beta_0 Intercept of the linear part.
 #' @param covariate_list A list in the form of \code{name = list(gen_fun,
 #'   true_par)} where \code{gen_fun} is a function that takes \code{n} as an
@@ -42,7 +42,7 @@
 #' @importFrom stats as.formula rbinom
 #' 
 #' @export
-sclr_ideal_data <- function(n = 1000, lambda = 0.5, beta_0 = -5,
+sclr_ideal_data <- function(n = 1000, theta = 0, beta_0 = -5,
                             covariate_list = list(
                               logHI = list(
                                 gen_fun = function(n) rnorm(n, 2, 2),
@@ -55,6 +55,8 @@ sclr_ideal_data <- function(n = 1000, lambda = 0.5, beta_0 = -5,
                             attach_seed = FALSE) {
   if (!is.null(seed)) set.seed(seed)
 
+  lambda <- invlogit(theta)
+  
   dat <- tibble(.rows = n)
 
   # Generate covariates
@@ -80,8 +82,8 @@ sclr_ideal_data <- function(n = 1000, lambda = 0.5, beta_0 = -5,
   # Attach additional attributes
   if (attach_true_vals) {
     true_vals <- tibble(
-      term = c("lambda", "beta_0", paste0("beta_", names(covariate_list))),
-      true_value = c(lambda, beta_0, rep(NA, length(covariate_list)))
+      term = c("theta", "beta_0", paste0("beta_", names(covariate_list))),
+      true_value = c(theta, beta_0, rep(NA, length(covariate_list)))
     )
     for (cov_name in names(covariate_list)) {
       true_vals[true_vals$term == paste0("beta_", cov_name), "true_value"] <-

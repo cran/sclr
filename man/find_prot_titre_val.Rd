@@ -4,9 +4,15 @@
 \alias{find_prot_titre_val}
 \title{Search function for scaled logit protection covariate levels}
 \usage{
-find_prot_titre_val(fit, var_name, newdata = NULL,
-  prot_var_name = "prot_point", lvl = 0.5, ci_level = 0.95,
-  tol = 10^(-7))
+find_prot_titre_val(
+  fit,
+  var_name,
+  newdata = NULL,
+  prot_var_name = "prot_point",
+  lvl = 0.5,
+  ci_level = 0.95,
+  tol = 10^(-7)
+)
 }
 \arguments{
 \item{fit}{Object returned by \code{\link{sclr}}.}

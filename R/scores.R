@@ -1,9 +1,9 @@
-# Functions to compute the score matrix
+# Score calculations
 # Arseniy Khvorov
-# Created 2019/09/11
-# Last edit 2019/10/15
+# Created 2019/11/01
+# Last edit 2019/11/01
 
-#' Score matrix
+#' Score matrix (reparameterised)
 #'
 #' @param y Model response
 #' @param x Model matrix
@@ -12,60 +12,32 @@
 #'
 #' @noRd
 get_scores <- function(y, x, pars, exp_Xb) {
-  dl <- get_dl(y, x, pars, exp_Xb)
+  dtheta <- get_dtheta(y, x, pars, exp_Xb)
   beta_part <- get_score_beta_part(y, x, pars, exp_Xb)
-  scores <- matrix(c(dl, beta_part), ncol = 1)
-  rownames(scores) <- paste0("d_", get_par_names(x))
-  scores
+  matrix(c(dtheta, beta_part), ncol = 1)
 }
 
-#' First derivative of log-likelihood with respect to lambda
+#' First derivative of log-likelihood with respect to theta (reparameterised)
 #'
-#' @inheritParams get_scores
+#' @inheritParams get_scores_alt
 #'
 #' @noRd
-get_dl <- function(y, x, pars, exp_Xb) {
-  lambda <- pars[1, ]
-  dl <- y / lambda - (1 - y) / (1 + exp_Xb - lambda)
-  dl <- sum(dl)
-  return(dl)
+get_dtheta <- function(y, x, pars, exp_Xb) {
+  theta <- pars[1, ]
+  dtheta <- y - invlogit(theta) + (1 - y) * exp_Xb * exp(theta) / 
+    (1 + exp_Xb * (1 + exp(theta)))
+  sum(dtheta)
 }
 
-#' First derivative of log-likelihood with respect to betas
+#' First derivative of log-likelihood with respect to betas (reparameterised)
 #'
 #' @inheritParams get_scores
 #'
 #' @noRd
 get_score_beta_part <- function(y, x, pars, exp_Xb) {
-  common <- get_score_beta_common(y, x, pars, exp_Xb) # A matrix with 1 col
-  beta_score_contr <- x * common[, 1] # Non-matrix multiplication
+  theta <- pars[1, ]
+  common <- -exp_Xb / (1 + exp_Xb) + (1 - y) * (1 + exp(theta)) * exp_Xb /
+    (1 + exp_Xb * (1 + exp(theta)))
+  beta_score_contr <- x * common[, 1] # Elementwise multiplication
   colSums(beta_score_contr)
-}
-
-#' Common part of the beta derivatives
-#'
-#' @inheritParams get_scores
-#'
-#' @noRd
-get_score_beta_common <- function(y, x, pars, exp_Xb) {
-  (1 - y) * get_dbc_f1(y, x, pars, exp_Xb) - get_dbc_f2(y, x, pars, exp_Xb)
-}
-
-#' First fraction term of common part of the beta derivatives
-#'
-#' @inheritParams get_scores
-#'
-#' @noRd
-get_dbc_f1 <- function(y, x, pars, exp_Xb) {
-  lambda <- pars[1, ]
-  exp_Xb / (1 + exp_Xb - lambda)
-}
-
-#' Second fraction term of common part of the beta derivatives
-#'
-#' @inheritParams get_scores
-#'
-#' @noRd
-get_dbc_f2 <- function(y, x, pars, exp_Xb) {
-  exp_Xb / (1 + exp_Xb)
 }

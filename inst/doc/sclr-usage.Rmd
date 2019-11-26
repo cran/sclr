@@ -20,16 +20,8 @@ library(sclr)
 
 ## Model
 
-The model is of the form
-
-$$
-P(Y = 1) = \lambda(1 - logit^{-1}(\beta_0 + \beta_1X_1 + \beta_2X_2 + ... + \beta_kX_k)) 
-$$
-Where
-
-$Y$ - binary outcome indicator, (eg. 1 - infected, 0 - not infected). \
-$X$ - covariate. \
-$k$ - number of covariates.
+See `vignette("sclr-math")` for model specification, log-likelihood, scores
+and second derivatives.
 
 ## Model fitting
 

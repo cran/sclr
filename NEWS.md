@@ -1,4 +1,19 @@
-# sclr 0.1.0-dev
+# sclr 0.3.0
+
+- Reparameterised the model so that all of the parameters are unconstrained.
+New baseline is the logit transformation of the old baseline.
+
+- Added the gradient ascent algorithm to handle cases with high baseline.
+
+- Added a warning for a possible baseline of 1.
+
+- Added the ability to check for a possible baseline of 1 with `check_baseline`.
+
+- Added `logLik` method to access likelihood from the fit object.
+
+- Added a warning message when the model is fit with no covariates.
+
+# sclr 0.2.0
 
 - Added `sclr_ideal_data` function to simulate ideal data for the model.
 

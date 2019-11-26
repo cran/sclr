@@ -13,7 +13,7 @@
 
 
 
-<title>Likelihood, scores and second derivatives</title>
+<title>Model specification, log-likelihood, scores and second derivatives</title>
 
 
 
@@ -214,7 +214,7 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 
 
 
-<h1 class="title toc-ignore">Likelihood, scores and second derivatives</h1>
+<h1 class="title toc-ignore">Model specification, log-likelihood, scores and second derivatives</h1>
 
 
 
@@ -226,7 +226,8 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <span class="math inline">\(\boldsymbol{Y}\)</span> — Vertical binary outcome vector.<br />
 <span class="math inline">\(k\)</span> — number of covariates.<br />
 <span class="math inline">\(n\)</span> — number of observations.<br />
-<span class="math inline">\(i\)</span> — observation index.</p>
+<span class="math inline">\(i\)</span> — observation index.<br />
+<span class="math inline">\(j\)</span> — covariate index.</p>
 <p><span class="math display">\[\begin{align}
 \boldsymbol{\beta} =
 
@@ -273,13 +274,24 @@ Y_3
 <div id="model" class="section level2">
 <h2>Model</h2>
 <p><span class="math display">\[
-P(Y_i = 1) = \lambda \Big( 1 - \frac{\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})} \Big)
+P(Y_i = 1) = 
+\frac{\lambda}{1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})} = 
+\frac{\text{exp}(\theta)}{(1 + \text{exp}(\theta))(1 +
+\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}))} 
 \]</span></p>
+<p><span class="math inline">\(\theta\)</span> is the logit transformation of <span class="math inline">\(\lambda\)</span>: <span class="math inline">\(\theta = log(\frac{\lambda}{1-\lambda})\)</span></p>
+<p>Optimisation is done using the <span class="math inline">\(\theta\)</span> parameterisation because it does not constrain the likelihood.</p>
 </div>
 <div id="log-likelihood" class="section level2">
 <h2>Log likelihood</h2>
 <p><span class="math display">\[
-l(\lambda, \boldsymbol{\beta}) = \sum_i \text{log} \ \lambda + (1 - Y_i) \ \text{log}\big(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda\big) - \text{log}\big(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})\big)
+l(\theta, \boldsymbol{\beta}) = 
+\sum_i \ y_i \ \theta -
+\text{log} \big( 1+\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) \big) -
+\text{log} \big( 1+\text{exp}(\theta) \big) +
+(1-y_i)\text{log} 
+\Big( 1 + \text{exp} \big( \boldsymbol{X_i}\boldsymbol{\beta} \big) \big( 1 + 
+\text{exp}(\theta) \big) \Big)
 \]</span></p>
 </div>
 <div id="scores" class="section level2">
@@ -288,24 +300,33 @@ l(\lambda, \boldsymbol{\beta}) = \sum_i \text{log} \ \lambda + (1 - Y_i) \ \text
 
 \begin{bmatrix}
 \frac{dl}{d\lambda} \\
-\frac{dl}{d\beta_0} \\
-\frac{dl}{d\beta_1} \\
-\vdots \\
-\frac{dl}{d\beta_k}
+\frac{dl}{d\beta_j}
 \end{bmatrix}
 
 =
 
 \begin{bmatrix}
-\sum_i \frac{Y_i}{\lambda} - \frac{1 - Y_i}{1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda} \\
+\sum_i y_i - 
+\frac{\text{exp}(\theta)}{1 + \text{exp}(\theta)} +
+\frac{
+(1 - y_i) \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) \text{exp}(\theta)
+}{
+1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) 
+\big( 1 + \text{exp}(\theta) \big)
+}\\
 
-\sum_i \frac{(1 - Y_i)\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda} - \frac{\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})} \\
-
-\sum_i \frac{(1 - Y_i)X_{1,i}\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda} - \frac{X_{1,i}\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})} \\
-
-\vdots \\
-
-\sum_i \frac{(1 - Y_i)X_{k,i}\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda} - \frac{X_{k,i}\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})} \\
+\sum_i x_{j, i} \Big( -\frac{
+\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) 
+}{
+1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})
+} + \frac{
+(1 - y_i) 
+\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})
+\big( 1 + \text{exp}(\theta) \big) 
+}{
+1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) 
+\big( 1 + \text{exp}(\theta) \big)
+} \Big) \\
 
 \end{bmatrix}
 
@@ -317,60 +338,52 @@ l(\lambda, \boldsymbol{\beta}) = \sum_i \text{log} \ \lambda + (1 - Y_i) \ \text
 \begin{array}{cc}
 
 \begin{matrix}
-\frac{dl}{d\lambda} \qquad \qquad \qquad \qquad \qquad &amp; \frac{dl}{d\beta_0} \qquad \qquad \qquad \qquad \qquad  &amp; \qquad \qquad \frac{dl}{d\beta_1} \qquad \qquad \qquad \qquad &amp; \quad \ldots \qquad \qquad \qquad \qquad \qquad &amp; \frac{dl}{d\beta_k}
+\frac{dl}{d\lambda} \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad &amp; \frac{dl}{d\beta_j}
 \end{matrix}\\
 
 \begin{matrix}
 \frac{dl}{d\lambda} \\
-\frac{dl}{d\beta_0} \\
-\frac{dl}{d\beta_1} \\
-\vdots \\
-\frac{dl}{d\beta_k}
+\frac{dl}{d\beta_j} \\
 \end{matrix}
 
 \begin{bmatrix}
 
-\sum_i-\frac{Y_i}{\lambda^2} - \frac{1 - Y_i}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda)^2} &amp;
+\sum_i 
+- \frac{
+\text{exp}(\theta)
+}{
+\big( 1+\text{exp}(\theta) \big)^2
+} +
+\frac{
+(1-y_i)(1+\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}))
+\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) \text{exp}(\theta)
+}{
+\Big( 1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) 
+\big( 1 + \text{exp}(\theta) \big) \Big)^2
+} &amp;
 
-\sum_i \frac{(1 - Y_i) \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda)^2} &amp;
+\sum_i x_{j,i} \Big(
+\frac{
+(1-y_i)
+\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) \text{exp}(\theta)
+}{
+\Big( 1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) 
+\big( 1 + \text{exp}(\theta) \big) \Big)^2
+} \Big) \\
 
-\sum_i \frac{(1 - Y_i) X_{1, i} \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda)^2} &amp; 
+. &amp;
 
-\ldots &amp;
-
-\sum_i \frac{(1 - Y_i) X_{k, i} \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda)^2} \\
-
-. &amp; 
-
-\sum_i \frac{(1 - Y_i)(1-\lambda)\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda)^2} -\frac{\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}))^2} &amp;
-
-\sum_i \frac{X_{1, i} (1 - Y_i) (1-\lambda)\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda)^2} -\frac{X_{1, i} \text{exp} (\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}))^2} &amp;
-
-\ldots &amp; 
-
-\sum_i \frac{X_{k, i} (1 - Y_i) (1-\lambda)\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda)^2} -\frac{X_{k, i} \text{exp} (\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}))^2} \\
-
-. &amp; 
-
-. &amp; 
-
-\sum_i \frac{X_{1, i}^2 (1 - Y_i) (1-\lambda)\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda)^2} -\frac{X_{1, i}^2 \text{exp} (\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}))^2} &amp; 
-
-\ldots &amp; 
-
-\sum_i \frac{X_{1, i}X_{k, i} (1 - Y_i) (1-\lambda)\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda)^2} -\frac{X_{1, i}X_{k, i} \text{exp} (\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}))^2} \\
-
-\vdots &amp; \vdots &amp; \vdots &amp; \ddots &amp; \vdots \\
-
-. &amp; 
-
-. &amp; 
-
-. &amp; 
-
-\ldots &amp; 
-
-\sum_i \frac{X_{k, i}^2 (1 - Y_i) (1-\lambda)\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) - \lambda)^2} -\frac{X_{k, i}^2 \text{exp} (\boldsymbol{X_i}\boldsymbol{\beta})}{(1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}))^2}
+\sum_i x_{j,i} \Big(
+- \frac{
+\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) 
+}{
+\big( 1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) \big)^2
+} + \frac{
+(1-y_i)(1+\text{exp}(\theta))\text{exp}(\boldsymbol{X_i}\boldsymbol{\beta})
+}{
+\Big( 1 + \text{exp}(\boldsymbol{X_i}\boldsymbol{\beta}) 
+\big( 1 + \text{exp}(\theta) \big) \Big)^2
+} \Big) \\
 
 \end{bmatrix}
 
