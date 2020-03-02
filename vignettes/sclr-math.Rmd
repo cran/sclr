@@ -75,7 +75,7 @@ P(Y_i = 1) =
 $$
 
 $\theta$ is the logit transformation of $\lambda$: 
-$\theta = log(\frac{\lambda}{1-\lambda})$
+$\theta = \text{log}(\frac{\lambda}{1-\lambda})$
 
 Optimisation is done using the $\theta$ parameterisation because it does not 
 constrain the likelihood.

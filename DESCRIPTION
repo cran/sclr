@@ -1,6 +1,6 @@
 Package: sclr
 Title: Scaled Logistic Regression
-Version: 0.3.0
+Version: 0.3.1
 Authors@R: 
     person(given = "Arseniy",
            family = "Khvorov",
@@ -10,16 +10,17 @@ Description:
     Maximum likelihood estimation of the scaled logit model parameters
     proposed in Dunning (2006) <doi:10.1002/sim.2282>.
 License: MIT + file LICENSE
+URL: https://khvorov45.github.io/sclr/
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.0.0
+RoxygenNote: 7.0.2
 Depends: R (>= 3.6.0)
-Imports: broom, tibble, dplyr, rlang, stats
+Imports: broom, tibble, dplyr, rlang, stats, purrr
 Suggests: knitr, rmarkdown, testthat (>= 2.1.0)
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2019-11-26 21:21:02 UTC; khvoroa
+Packaged: 2020-03-02 00:49:05 UTC; khvorova2
 Author: Arseniy Khvorov [aut, cre]
 Maintainer: Arseniy Khvorov <khvorov45@gmail.com>
 Repository: CRAN
-Date/Publication: 2019-11-26 21:40:02 UTC
+Date/Publication: 2020-03-02 12:30:02 UTC

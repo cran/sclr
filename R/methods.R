@@ -118,6 +118,7 @@ logLik.sclr <- function(object, ...) {
 #' @importFrom stats predict delete.response model.frame model.matrix qnorm
 #' @importFrom dplyr bind_cols
 #' @importFrom tibble tibble
+#' @importFrom purrr map_dbl
 #' 
 #' @export
 predict.sclr <- function(object, newdata, ci_lvl = 0.95, ...) {
@@ -134,18 +135,22 @@ predict.sclr <- function(object, newdata, ci_lvl = 0.95, ...) {
   ests_beta_mat <- matrix(ests[-1], ncol = 1) # Estimated betas
   
   # Point estimates
-  prot_point_lin <- apply(model_mat, 1, function(x) x %*% ests_beta_mat)
+  prot_point_lin <- map_dbl(
+    1:nrow(model_mat), 
+    function(i) matrix(model_mat[i, ], nrow = 1) %*% ests_beta_mat
+  )
 
-  # Modified beta covariance matrices
+  # Variance of linear predictor
   ests_beta_cov <- vcov(object)[-1, -1] # Beta covariances
-  object_coefs <- get_x_coeffs(model_mat) # object modifiers
-  cov_mod_mats <- build_symm_mat(object_coefs) # In a list of matrices
-  cov_modified <- lapply(cov_mod_mats, function(x) x * ests_beta_cov)
-  
-  # Standard deviations associated with each of the point estimates
-  sds <- lapply(cov_modified, sum)
-  sds <- unlist(sds)
-  sds <- sqrt(sds)
+  lin_vars <- map_dbl(
+    1:nrow(model_mat), 
+    function(i) {
+      matrix(model_mat[i, ], nrow = 1) %*% 
+        ests_beta_cov %*% 
+        matrix(model_mat[i, ], ncol = 1)
+    }
+  )
+  sds <- sqrt(lin_vars)
   
   # Ranges
   lvl <- qnorm((1 + ci_lvl) / 2)

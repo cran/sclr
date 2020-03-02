@@ -46,5 +46,5 @@ Computing engine behind \code{\link{sclr}}.
 }
 \details{
 The likelihood maximisation can use the Newton-Raphson or the gradient
-ascent algprithms.
+ascent algorithms.
 }

@@ -1,3 +1,9 @@
+# sclr 0.3.1
+
+- Updated `predict.sclr` to not have named columns with the [new version](https://github.com/tidyverse/tibble/blob/master/NEWS.md#tibble-299999014) of tibble. [fa696d9](https://github.com/khvorov45/sclr/commit/fa696d94a42add43287de2198e1873542dffa28d)
+
+- Made linear predictor variance calculation faster in `predict.sclr`. [fa696d9](https://github.com/khvorov45/sclr/commit/fa696d94a42add43287de2198e1873542dffa28d)
+
 # sclr 0.3.0
 
 - Reparameterised the model so that all of the parameters are unconstrained.

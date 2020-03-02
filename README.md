@@ -13,17 +13,20 @@ status](https://travis-ci.org/khvorov45/sclr.svg?branch=master)](https://travis-
 <!-- badges: end -->
 
 The goal of sclr is to fit the scaled logit model from Dunning (2006)
-using the maximum likelihood method.
+using the maximum likelihood method. The [package
+website](https://khvorov45.github.io/sclr/) contains all documentation,
+vignettes and version history.
 
 ## Installation
 
-Install the [CRAN](https://CRAN.R-project.org) version with
+Install the [CRAN](https://CRAN.R-project.org/package=sclr) version with
 
 ``` r
 install.packages("sclr")
 ```
 
-Or the development version from [GitHub](https://github.com/) with:
+Or the development version from
+[GitHub](https://github.com/khvorov45/sclr) with:
 
 ``` r
 # install.packages("devtools")
@@ -34,8 +37,10 @@ devtools::install_github("khvorov45/sclr")
 
 The model is logistic regression with an added parameter for the top
 asymptote. For model specification, log likelihood, scores and second
-derivatives see `vignette("sclr-math")`. Documentation of the main
-fitting function `?sclr` has details on how the model is fit.
+derivatives see the [math
+vignette](https://khvorov45.github.io/sclr/articles/sclr-math.html).
+Documentation of the main fitting function `?sclr` has details on how
+the model is fit.
 
 ## Example
 
@@ -60,7 +65,8 @@ summary(fit)
 #> Log likelihood: -2469.765
 ```
 
-For more details see `vignette("sclr-usage")`.
+For more details see the [usage
+vignette](https://khvorov45.github.io/sclr/articles/sclr-usage.html).
 
 ## References
 
